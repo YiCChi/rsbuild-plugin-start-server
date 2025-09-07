@@ -16,7 +16,11 @@
   },
   "scripts": {
     "dev": "rslib build --watch",
-    "build": "rslib build"
+    "build": "rslib build",
+    "example:dev": "rsbuild build --watch --env-mode development",
+    "example:build:integration": "rsbuild build --env-mode integration",
+    "example:build:staging": "rsbuild build --env-mode staging",
+    "example:build:production": "rsbuild build --env-mode production"
   },
   "keywords": [
     "rsbuild",
@@ -33,7 +37,9 @@
   "devDependencies": {
     "@rsbuild/core": "1.5.4",
     "@rslib/core": "0.12.4",
+    "@types/express": "5.0.3",
     "@types/node": "24.3.1",
+    "express": "5.1.0",
     "typescript": "5.9.2"
   },
   "packageManager": "pnpm@10.15.0"
