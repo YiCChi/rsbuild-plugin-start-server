@@ -1,0 +1,18 @@
+{
+  "name": "rsbuild-plugin-start-server-example",
+  "type": "module",
+  "scripts": {
+    "dev": "rsbuild build --watch --env-mode development",
+    "build:integration": "rsbuild build --env-mode integration",
+    "build:staging": "rsbuild build --env-mode staging",
+    "build:production": "rsbuild build --env-mode production"
+  },
+  "devDependencies": {
+    "@hono/node-server": "2.0.5",
+    "@rsbuild/core": "catalog:",
+    "@types/node": "catalog:",
+    "hono": "4.12.26",
+    "rsbuild-plugin-start-server": "workspace:*",
+    "typescript": "catalog:"
+  }
+}

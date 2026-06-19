@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "lib": ["es2025"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "noEmit": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "verbatimModuleSyntax": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["oxfmt.config.ts"]
+}

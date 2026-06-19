@@ -1,0 +1,49 @@
+{
+  "name": "rsbuild-plugin-start-server",
+  "version": "1.0.0",
+  "description": "Automatically (re)start your server once Rsbuild's build completes.",
+  "keywords": [
+    "node",
+    "rsbuild",
+    "rsbuild-plugin",
+    "server",
+    "watch"
+  ],
+  "license": "MIT",
+  "author": "YiCChi",
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "scripts": {
+    "dev": "rslib build --watch",
+    "build": "rslib build",
+    "typecheck": "tsc",
+    "lint": "rslint",
+    "fmt": "oxfmt --write .",
+    "test": "rstest run",
+    "test:watch": "rstest"
+  },
+  "devDependencies": {
+    "@rsbuild/core": "catalog:",
+    "@rslib/core": "0.23.0",
+    "@rslint/core": "0.6.2",
+    "@rstest/core": "0.10.6",
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
+  },
+  "peerDependencies": {
+    "@rsbuild/core": ">1.5.0"
+  }
+}
