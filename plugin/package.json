@@ -26,6 +26,11 @@
     "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
+  "repository": {
+    "url": "https://github.com/YiCChi/rsbuild-plugin-start-server",
+    "directory": "plugin",
+    "type": "git"
+  },
   "scripts": {
     "dev": "rslib build --watch",
     "build": "rslib build",
