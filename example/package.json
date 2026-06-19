@@ -1,0 +1,18 @@
+{
+  "name": "rsbuild-plugin-start-server-example",
+  "type": "module",
+  "scripts": {
+    "dev": "rsbuild build --watch --env-mode development",
+    "build:integration": "rsbuild build --env-mode integration",
+    "build:staging": "rsbuild build --env-mode staging",
+    "build:production": "rsbuild build --env-mode production"
+  },
+  "devDependencies": {
+    "@rsbuild/core": "catalog:",
+    "@types/express": "5.0.6",
+    "@types/node": "catalog:",
+    "express": "5.2.1",
+    "rsbuild-plugin-start-server": "workspace:*",
+    "typescript": "catalog:"
+  }
+}

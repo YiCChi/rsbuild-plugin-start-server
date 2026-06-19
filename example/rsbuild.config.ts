@@ -1,5 +1,5 @@
 import { defineConfig } from '@rsbuild/core'
-import { pluginStartServer } from './src/index';
+import { pluginStartServer } from 'rsbuild-plugin-start-server';
 
 const envs = ['development', 'integration', 'staging', 'production'];
 
@@ -12,11 +12,6 @@ export default defineConfig(({ env, command, envMode, }) => {
   const isDev = envMode === 'development';
 
   return {
-    source: {
-      entry: {
-        index: './example/index.ts'
-      },
-    },
     plugins: [
       isDev && pluginStartServer({ 'script': 'dist/index.js' }),
     ],

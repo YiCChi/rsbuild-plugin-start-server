@@ -1,14 +1,18 @@
 {
   "compilerOptions": {
+    "rootDir": "src",
     "lib": ["es2025"],
     "module": "esnext",
     "moduleResolution": "bundler",
-    "noEmit": true,
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "verbatimModuleSyntax": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": false,
+    "outDir": "./dist",
+    "declaration": true,
+    "emitDeclarationOnly": true
   },
-  "include": ["oxfmt.config.ts"]
+  "include": ["src"]
 }

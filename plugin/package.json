@@ -1,0 +1,42 @@
+{
+  "name": "rsbuild-plugin-start-server",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Automatically (re)start your server once Rsbuild's build completes.",
+  "engines": {
+    "node": ">=22.22.0"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "dev": "rslib build --watch",
+    "build": "rslib build",
+    "lint": "rslint",
+    "fmt": "oxfmt --write .",
+    "test": "rstest"
+  },
+  "keywords": [
+    "rsbuild",
+    "plugin",
+    "watch",
+    "restart",
+    "node"
+  ],
+  "author": "YiCChi",
+  "license": "MIT",
+  "peerDependencies": {
+    "@rsbuild/core": "^1.5.0"
+  },
+  "devDependencies": {
+    "@rsbuild/core": "catalog:",
+    "@rslib/core": "0.23.0",
+    "@rslint/core": "0.6.2",
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
+  }
+}

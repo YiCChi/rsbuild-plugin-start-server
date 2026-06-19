@@ -1,4 +1,14 @@
 packages:
-  - examples/*
-onlyBuiltDependencies:
-  - core-js
+  - example
+  - plugin
+saveExact: true
+
+catalog:
+  '@types/node': 24.13.2
+  typescript: 6.0.3
+  '@rsbuild/core': 2.0.15
+
+minimumReleaseAge: 1440
+
+allowBuilds:
+  core-js: set this to true or false

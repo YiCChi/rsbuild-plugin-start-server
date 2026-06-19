@@ -4,7 +4,14 @@ export default defineConfig({
   lib: [
     {
       syntax: 'es2022',
-      dts: true,
+      dts: {
+        autoExtension: true
+      },
+      redirect: {
+        dts: {
+          extension: true
+        }
+      }
     }
   ],
   source: {
@@ -13,6 +20,8 @@ export default defineConfig({
   output: {
     cleanDistPath: true,
     sourceMap: true,
-    target: 'node'
-  }
+    target: 'node',
+    minify: true
+  },
+  mode: 'production'
 })

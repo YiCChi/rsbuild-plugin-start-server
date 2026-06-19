@@ -10,5 +10,5 @@
     "verbatimModuleSyntax": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["oxfmt.config.ts"]
+  "include": ["src"],
 }
