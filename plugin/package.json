@@ -22,14 +22,17 @@
   "scripts": {
     "dev": "rslib build --watch",
     "build": "rslib build",
+    "typecheck": "tsc",
     "lint": "rslint",
     "fmt": "oxfmt --write .",
-    "test": "rstest"
+    "test": "rstest run",
+    "test:watch": "rstest"
   },
   "devDependencies": {
     "@rsbuild/core": "catalog:",
     "@rslib/core": "0.23.0",
     "@rslint/core": "0.6.2",
+    "@rstest/core": "0.10.6",
     "@types/node": "catalog:",
     "typescript": "catalog:"
   },
