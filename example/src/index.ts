@@ -1,19 +1,18 @@
-import express from 'express';
+import { serve } from '@hono/node-server';
+import { Hono } from 'hono';
 
 import { foo } from './foo';
 
-const app = express();
+const app = new Hono();
 
-app.get('/foo', (req, res) => {
-  res.json(foo());
-  res.end();
-});
+app.get('/', (ctx) => ctx.json(foo()));
 
-app.listen(3000, (err) => {
-  if (err) {
-    console.error('Error starting server:', err);
-    return;
-  } else {
-    console.log('Server is running on http://localhost:3000');
-  }
-});
+serve(
+  {
+    port: 3000,
+    fetch: app.fetch,
+  },
+  (info) => {
+    console.log(`Server listening on http://localhost:${info.port}`);
+  },
+);
