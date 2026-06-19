@@ -1,7 +1,7 @@
 import { defineConfig } from 'oxfmt';
 
 export default defineConfig({
-  printWidth: 100,
+  printWidth: 80,
   singleQuote: true,
   insertFinalNewline: true,
   embeddedLanguageFormatting: 'auto',

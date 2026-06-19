@@ -1,13 +1,16 @@
-import type { RsbuildPlugin } from '@rsbuild/core';
-import { isAbsolute, join } from 'node:path';
 import { fork } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
+import { isAbsolute, join } from 'node:path';
+
+import type { RsbuildPlugin } from '@rsbuild/core';
 
 const logger = {
-  debug: (...msg: any[]) => { process.env.DEBUG && console.debug('[plugin-run-script] Debug', ...msg) },
+  debug: (...msg: any[]) => {
+    process.env.DEBUG && console.debug('[plugin-run-script] Debug', ...msg);
+  },
   info: (...msg: any[]) => console.log('[plugin-run-script] Info: ', ...msg),
   error: (...msg: any[]) => console.log('[plugin-run-script] Error: ', ...msg),
-}
+};
 
 function getSignal(sig?: NodeJS.Signals | boolean) {
   if (sig === false) return undefined;
@@ -18,16 +21,16 @@ function getSignal(sig?: NodeJS.Signals | boolean) {
 export interface PluginStartServerOptions {
   /** Relative path (from project root) to the built entry file. */
   script: string;
-  /** 
-   * Extra Node.js args, e.g. ['--inspect=9229'] 
+  /**
+   * Extra Node.js args, e.g. ['--inspect=9229']
    */
   nodeArgs?: string[];
   /**
-   *  Arguments passed to the application script. 
+   *  Arguments passed to the application script.
    */
   args?: string[];
-  /** 
-   * Environment variables to merge into process.env 
+  /**
+   * Environment variables to merge into process.env
    */
   env?: Record<string, string | undefined>;
   /**
@@ -45,7 +48,7 @@ export interface PluginStartServerOptions {
    * @default true
    */
   autoRestart?: boolean;
-  /** 
+  /**
    * Custom kill signal or false to disable
    * @default false (use 'SIGTERM')
    */
@@ -61,7 +64,9 @@ export interface PluginStartServerOptions {
   enableSourceMaps?: boolean;
 }
 
-export function pluginStartServer(options: PluginStartServerOptions): RsbuildPlugin {
+export function pluginStartServer(
+  options: PluginStartServerOptions,
+): RsbuildPlugin {
   const {
     script,
     nodeArgs = [],
@@ -85,7 +90,10 @@ export function pluginStartServer(options: PluginStartServerOptions): RsbuildPlu
     logger.debug(`Script args: ${args.join(' ')}`);
 
     child = fork(entryPoint, args, {
-      execArgv: [enableSourceMaps && '--enable-source-maps', ...nodeArgs].filter(Boolean) as string[],
+      execArgv: [
+        enableSourceMaps && '--enable-source-maps',
+        ...nodeArgs,
+      ].filter(Boolean) as string[],
       stdio: 'inherit',
       cwd: cwd || process.cwd(),
       env: { ...process.env, ...env },
@@ -112,7 +120,6 @@ export function pluginStartServer(options: PluginStartServerOptions): RsbuildPlu
       }
       _startServer();
     }, restartDebounceMs);
-
   }
 
   function afterBuild() {
@@ -129,7 +136,7 @@ export function pluginStartServer(options: PluginStartServerOptions): RsbuildPlu
   }
 
   // Handle parent termination so we don't leave orphan processes.
-  (['SIGINT', 'SIGTERM', 'SIGQUIT'] as const).forEach(sig => {
+  (['SIGINT', 'SIGTERM', 'SIGQUIT'] as const).forEach((sig) => {
     process.on(sig, () => {
       _stopServer();
       process.exit();
@@ -149,15 +156,18 @@ export function pluginStartServer(options: PluginStartServerOptions): RsbuildPlu
       });
       keyboardSupportRegistered = true;
     }
-  } catch {/* ignore */ }
+  } catch {
+    /* ignore */
+  }
 
   return {
     name: 'plugin-start-server',
     setup(api) {
       api.onAfterBuild(async (args) => {
-        if (args.stats?.hasErrors()) return
+        if (args.stats?.hasErrors()) return;
 
-        if (keyboardSupportRegistered) logger.info('Type "rs" and press Enter to manually restart the app.');
+        if (keyboardSupportRegistered)
+          logger.info('Type "rs" and press Enter to manually restart the app.');
         afterBuild();
       });
     },

@@ -1,18 +1,18 @@
-import { defineConfig } from '@rslib/core'
+import { defineConfig } from '@rslib/core';
 
 export default defineConfig({
   lib: [
     {
       syntax: 'es2022',
       dts: {
-        autoExtension: true
+        autoExtension: true,
       },
       redirect: {
         dts: {
-          extension: true
-        }
-      }
-    }
+          extension: true,
+        },
+      },
+    },
   ],
   source: {
     tsconfigPath: './tsconfig.build.json',
@@ -21,7 +21,7 @@ export default defineConfig({
     cleanDistPath: true,
     sourceMap: true,
     target: 'node',
-    minify: true
+    minify: true,
   },
-  mode: 'production'
-})
+  mode: 'production',
+});

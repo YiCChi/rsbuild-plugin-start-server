@@ -93,18 +93,18 @@ pluginStartServer(options: PluginStartServerOptions): RsbuildPlugin
 
 ### `PluginStartServerOptions`
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `script` | `string` | (required) | Built entry file to execute (relative to project root or absolute). |
-| `nodeArgs` | `string[]` | `[]` | Extra Node.js exec arguments (e.g. `['--inspect=9229']`). |
-| `args` | `string[]` | `[]` | Arguments passed to your application script. |
-| `env` | `Record<string, string \| undefined>` | `{}` | Extra environment vars merged into `process.env`. |
-| `clearOnRestart` | `boolean` | `true` | Clear console before each restart. |
-| `restartDebounceMs` | `number` | `150` | Debounce interval for back‑to‑back rebuilds. |
-| `autoRestart` | `boolean` | `true` | If `false`, only the first build starts the process (no auto restarts). |
-| `signal` | `NodeJS.Signals \| boolean` | `false` | Custom kill signal. `false` = `SIGTERM`; `true` = `SIGUSR2`; or pass a signal string. |
-| `cwd` | `string` | `process.cwd()` | Working directory for the child process. |
-| `enableSourceMaps` | `boolean` | `true` | Adds `--enable-source-maps` to `execArgv` for better stack traces. |
+| Option              | Type                                  | Default         | Description                                                                           |
+| ------------------- | ------------------------------------- | --------------- | ------------------------------------------------------------------------------------- |
+| `script`            | `string`                              | (required)      | Built entry file to execute (relative to project root or absolute).                   |
+| `nodeArgs`          | `string[]`                            | `[]`            | Extra Node.js exec arguments (e.g. `['--inspect=9229']`).                             |
+| `args`              | `string[]`                            | `[]`            | Arguments passed to your application script.                                          |
+| `env`               | `Record<string, string \| undefined>` | `{}`            | Extra environment vars merged into `process.env`.                                     |
+| `clearOnRestart`    | `boolean`                             | `true`          | Clear console before each restart.                                                    |
+| `restartDebounceMs` | `number`                              | `150`           | Debounce interval for back‑to‑back rebuilds.                                          |
+| `autoRestart`       | `boolean`                             | `true`          | If `false`, only the first build starts the process (no auto restarts).               |
+| `signal`            | `NodeJS.Signals \| boolean`           | `false`         | Custom kill signal. `false` = `SIGTERM`; `true` = `SIGUSR2`; or pass a signal string. |
+| `cwd`               | `string`                              | `process.cwd()` | Working directory for the child process.                                              |
+| `enableSourceMaps`  | `boolean`                             | `true`          | Adds `--enable-source-maps` to `execArgv` for better stack traces.                    |
 
 ### Signals
 
@@ -122,9 +122,9 @@ pluginStartServer({ script: 'dist/server/index.js' });
 
 ```ts
 pluginStartServer({
-	script: 'dist/server/index.js',
-	nodeArgs: ['--inspect=9229'],
-	args: ['--port', '4000'],
+  script: 'dist/server/index.js',
+  nodeArgs: ['--inspect=9229'],
+  args: ['--port', '4000'],
 });
 ```
 
@@ -132,9 +132,9 @@ pluginStartServer({
 
 ```ts
 pluginStartServer({
-	script: 'dist/server/index.js',
-	env: { NODE_ENV: 'development', FEATURE_FLAG_X: '1' },
-	clearOnRestart: false,
+  script: 'dist/server/index.js',
+  env: { NODE_ENV: 'development', FEATURE_FLAG_X: '1' },
+  clearOnRestart: false,
 });
 ```
 
@@ -142,8 +142,8 @@ pluginStartServer({
 
 ```ts
 pluginStartServer({
-	script: 'dist/server/index.js',
-	autoRestart: false,
+  script: 'dist/server/index.js',
+  autoRestart: false,
 });
 ```
 
@@ -153,7 +153,7 @@ pluginStartServer({
 import { join } from 'node:path';
 
 pluginStartServer({
-	script: join(process.cwd(), 'dist/server/index.js'),
+  script: join(process.cwd(), 'dist/server/index.js'),
 });
 ```
 
@@ -170,12 +170,12 @@ pluginStartServer({
 
 ## Troubleshooting
 
-| Symptom | Possible Cause | Fix |
-|---------|----------------|-----|
-| Child never starts | Wrong `script` path | Check emitted file path in `dist` folder. |
-| Rapid multiple restarts | Very fast rebuilds | Increase `restartDebounceMs`. |
+| Symptom                   | Possible Cause                | Fix                                                                    |
+| ------------------------- | ----------------------------- | ---------------------------------------------------------------------- |
+| Child never starts        | Wrong `script` path           | Check emitted file path in `dist` folder.                              |
+| Rapid multiple restarts   | Very fast rebuilds            | Increase `restartDebounceMs`.                                          |
 | No manual restart on `rs` | Terminal not forwarding stdin | Run outside of an environment that detaches stdin (e.g. some CI logs). |
-| No source map traces | Node version / maps disabled | Ensure Node >= 18.12 and `enableSourceMaps: true`. |
+| No source map traces      | Node version / maps disabled  | Ensure Node >= 18.12 and `enableSourceMaps: true`.                     |
 
 ## Contributing
 
