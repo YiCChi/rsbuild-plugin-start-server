@@ -11,4 +11,4 @@ catalog:
 minimumReleaseAge: 1440
 
 allowBuilds:
-  core-js: set this to true or false
+  core-js: false
