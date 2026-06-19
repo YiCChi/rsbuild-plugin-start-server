@@ -1,3 +1,4 @@
+/* rslint-disable @typescript-eslint/no-explicit-any */
 import { fork } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
 import { isAbsolute, join } from 'node:path';
@@ -6,7 +7,9 @@ import type { RsbuildPlugin } from '@rsbuild/core';
 
 const logger = {
   debug: (...msg: any[]) => {
-    process.env.DEBUG && console.debug('[plugin-run-script] Debug', ...msg);
+    if (process.env.DEBUG) {
+      console.debug('[plugin-run-script] Debug', ...msg);
+    }
   },
   info: (...msg: any[]) => console.log('[plugin-run-script] Info: ', ...msg),
   error: (...msg: any[]) => console.log('[plugin-run-script] Error: ', ...msg),
@@ -82,7 +85,7 @@ export function pluginStartServer(
 
   let child: ChildProcess | undefined;
   let timer: NodeJS.Timeout | undefined;
-  let entryPoint = isAbsolute(script) ? script : join(process.cwd(), script);
+  const entryPoint = isAbsolute(script) ? script : join(process.cwd(), script);
   let keyboardSupportRegistered = false;
 
   function _startServer() {
