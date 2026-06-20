@@ -104,18 +104,28 @@ export function pluginStartServer(
     manualRestart = true,
   } = options;
 
-  const entryPoint = isAbsolute(script) ? script : join(process.cwd(), script);
-
   return {
     name: 'plugin-start-server',
     setup(api) {
-      const { logger } = api;
+      const { logger, context } = api;
+
+      // Resolve relative script paths against Rsbuild's project root rather
+      // than process.cwd(), so custom roots (`--root`, monorepos) work.
+      const entryPoint = isAbsolute(script)
+        ? script
+        : join(context.rootPath, script);
 
       let child: ChildProcess | undefined;
       let timer: NodeJS.Timeout | undefined;
       let restarting = false;
+      // Once cleanup has run we must never spawn another process.
+      let closed = false;
+      // Serialize restarts so rapid rebuilds can't run stop/start concurrently
+      // (which would orphan processes and cause EADDRINUSE).
+      let restartQueue: Promise<void> = Promise.resolve();
 
       function startServer() {
+        if (closed) return;
         logger.info(`Run ${entryPoint}...`);
 
         const execArgv = enableSourceMaps
@@ -200,34 +210,46 @@ export function pluginStartServer(
         });
       }
 
-      async function restartServer() {
+      function restartServer() {
+        if (closed) return;
         if (timer) clearTimeout(timer);
-        // Defer so a burst of rebuilds collapses into a single restart.
-        await new Promise<void>((resolve) => {
-          timer = setTimeout(resolve, restartDebounceMs);
-        });
-        timer = undefined;
+        // Debounce so a burst of rebuilds collapses into a single restart,
+        // then chain onto restartQueue so only one restart runs at a time.
+        timer = setTimeout(() => {
+          timer = undefined;
+          // Reassigns the queue tail to serialize restarts; the previous value
+          // is read on the right-hand side, so this is not an unused write.
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          restartQueue = restartQueue
+            .then(async () => {
+              if (closed) return;
+              const { reload } = resolveSignal(signal);
+              if (reload) {
+                // In-place reload: the process reloads itself, no re-fork.
+                logger.info('Reloading app (SIGUSR2)...');
+                restarting = true;
+                await stopServer();
+                return;
+              }
 
-        const { reload } = resolveSignal(signal);
-        if (reload) {
-          // In-place reload: the process reloads itself, nothing to re-fork.
-          logger.info('Reloading app (SIGUSR2)...');
-          restarting = true;
-          await stopServer();
-          return;
-        }
-
-        logger.info('Restarting app...');
-        restarting = true;
-        await stopServer();
-        if (clearOnRestart) process.stdout.write(CLEAR_SCREEN);
-        startServer();
+              logger.info('Restarting app...');
+              restarting = true;
+              await stopServer();
+              if (closed) return;
+              if (clearOnRestart) process.stdout.write(CLEAR_SCREEN);
+              startServer();
+            })
+            .catch((err) => {
+              logger.error('Failed to restart server:\n', err);
+            });
+        }, restartDebounceMs);
       }
 
       function afterBuild() {
+        if (closed) return;
         if (child && child.pid) {
           if (autoRestart) {
-            void restartServer();
+            restartServer();
           }
           return;
         }
@@ -238,15 +260,16 @@ export function pluginStartServer(
 
       // --- Manual restart shortcut ("rs" + Enter) ----------------------
       let stdinRegistered = false;
+      const onStdin = (data: string) => {
+        if (data.trim() === 'rs') {
+          logger.info('Received manual restart command (rs).');
+          restartServer();
+        }
+      };
       if (manualRestart && process.stdin.isTTY) {
         try {
           process.stdin.setEncoding('utf8');
-          process.stdin.on('data', (data: string) => {
-            if (data.trim() === 'rs') {
-              logger.info('Received manual restart command (rs).');
-              void restartServer();
-            }
-          });
+          process.stdin.on('data', onStdin);
           stdinRegistered = true;
         } catch {
           /* stdin not usable in this environment */
@@ -260,7 +283,8 @@ export function pluginStartServer(
       // for back-end workflows.)
       api.onAfterBuild((buildArgs) => {
         if (buildArgs.stats?.hasErrors()) return;
-        if (stdinRegistered) {
+        // Only advertise the shortcut once, on the first successful build.
+        if (buildArgs.isFirstCompile && stdinRegistered) {
           logger.info('Type "rs" and press Enter to manually restart the app.');
         }
         afterBuild();
@@ -270,14 +294,23 @@ export function pluginStartServer(
       // hijacking process signals because they integrate with the CLI and
       // the JS API (build.close()).
       const cleanup = () => {
+        closed = true;
         if (timer) {
           clearTimeout(timer);
           timer = undefined;
         }
+        if (stdinRegistered) {
+          process.stdin.removeListener('data', onStdin);
+          // Release stdin so it can't keep the event loop alive on exit.
+          process.stdin.pause();
+        }
         if (child?.pid) {
-          const { signal: sig } = resolveSignal(signal);
+          // On shutdown the child must actually terminate. In reload mode the
+          // configured signal is SIGUSR2 (reload, not exit), which would leave
+          // an orphan — so fall back to SIGTERM to really kill it.
+          const { reload, signal: sig } = resolveSignal(signal);
           try {
-            process.kill(child.pid, sig);
+            process.kill(child.pid, reload ? 'SIGTERM' : sig);
           } catch {
             /* already gone */
           }
