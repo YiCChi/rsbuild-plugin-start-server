@@ -301,8 +301,19 @@ export function pluginStartServer(
         }
         if (stdinRegistered) {
           process.stdin.removeListener('data', onStdin);
-          // Release stdin so it can't keep the event loop alive on exit.
-          process.stdin.pause();
+          // Release stdin so it can't keep the event loop alive on exit, but
+          // only if nothing else is reading it (other plugins, prompts, etc.).
+          if (
+            process.stdin.listenerCount('data') === 0 &&
+            process.stdin.listenerCount('readable') === 0
+          ) {
+            process.stdin.pause();
+          }
+        }
+        // Drop our process signal listeners so they don't accumulate when
+        // Rsbuild is run multiple times in the same process (e.g. tests, JS API).
+        for (const sig of signals) {
+          process.removeListener(sig, onSignal);
         }
         if (child?.pid) {
           // On shutdown the child must actually terminate. In reload mode the

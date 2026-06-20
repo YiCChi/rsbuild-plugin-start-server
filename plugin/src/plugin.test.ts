@@ -360,6 +360,29 @@ describe('onCloseBuild', () => {
 
     expect(mocks.fork).toHaveBeenCalledTimes(1);
   });
+
+  it('removes its process signal listeners on cleanup', () => {
+    rs.spyOn(process, 'kill').mockImplementation(() => true);
+
+    const before = EXIT_SIGNALS.map((sig) => process.listenerCount(sig));
+
+    const api = createFakeApi();
+    pluginStartServer({ script: 'dist/server/index.js' }).setup(
+      api as RsbuildPluginAPI,
+    );
+
+    // setup() adds exactly one listener per signal.
+    EXIT_SIGNALS.forEach((sig, i) => {
+      expect(process.listenerCount(sig)).toBe(before[i] + 1);
+    });
+
+    onCloseBuildHandler(api)();
+
+    // cleanup() removes them again, so repeated runs don't leak.
+    EXIT_SIGNALS.forEach((sig, i) => {
+      expect(process.listenerCount(sig)).toBe(before[i]);
+    });
+  });
 });
 
 // ---------------------------------------------------------------------------
