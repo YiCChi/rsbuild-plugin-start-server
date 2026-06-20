@@ -26,5 +26,8 @@ jobs:
       - run: pnpm run build
         working-directory: plugin
       - name: publish
-        run: pnpm publish
+        # `release` events check out a detached HEAD (the tag), which trips
+        # pnpm's default git branch check. The tag content is what we want to
+        # publish, so the branch check adds no value here.
+        run: pnpm publish --no-git-checks
         working-directory: plugin
