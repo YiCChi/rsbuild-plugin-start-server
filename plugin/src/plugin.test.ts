@@ -51,12 +51,13 @@ type FakeChild = EventEmitter & {
  */
 type FakeApi = Pick<
   RsbuildPluginAPI,
-  'logger' | 'onAfterBuild' | 'onCloseBuild' | 'onExit'
+  'logger' | 'context' | 'onAfterBuild' | 'onCloseBuild' | 'onExit'
 >;
 
 /** Build a fake Rsbuild plugin API that records registered hook callbacks. */
 function createFakeApi(): FakeApi {
   return {
+    context: { rootPath: '/project' },
     logger: {
       info: rs.fn(),
       warn: rs.fn(),
@@ -318,6 +319,113 @@ describe('onCloseBuild', () => {
     onCloseBuildHandler(api)();
 
     expect(killSpy).toHaveBeenCalledWith(pid, 'SIGTERM');
+  });
+
+  it('kills with SIGTERM (not SIGUSR2) on shutdown in reload mode', () => {
+    const killSpy = rs.spyOn(process, 'kill').mockImplementation(() => true);
+
+    const api = createFakeApi();
+    pluginStartServer({ script: 'dist/server/index.js', signal: true }).setup(
+      api as RsbuildPluginAPI,
+    );
+
+    onAfterBuildHandler(api)({ stats: { hasErrors: () => false } });
+    const pid = forkResult(0).pid;
+
+    onCloseBuildHandler(api)();
+
+    // A SIGUSR2 here would only reload the child, leaving an orphan process.
+    expect(killSpy).toHaveBeenCalledWith(pid, 'SIGTERM');
+    expect(killSpy).not.toHaveBeenCalledWith(pid, 'SIGUSR2');
+  });
+
+  it('aborts a pending restart so nothing is forked after cleanup', async () => {
+    rs.spyOn(process, 'kill').mockImplementation(() => true);
+    rs.useFakeTimers();
+
+    const api = createFakeApi();
+    pluginStartServer({
+      script: 'dist/server/index.js',
+      restartDebounceMs: 150,
+    }).setup(api as RsbuildPluginAPI);
+
+    const fire = () =>
+      onAfterBuildHandler(api)({ stats: { hasErrors: () => false } });
+
+    fire(); // start
+    fire(); // schedule restart (debounced)
+    onCloseBuildHandler(api)(); // cleanup before the debounce fires
+
+    await rs.advanceTimersByTimeAsync(1000);
+
+    expect(mocks.fork).toHaveBeenCalledTimes(1);
+  });
+
+  it('removes its process signal listeners on cleanup', () => {
+    rs.spyOn(process, 'kill').mockImplementation(() => true);
+
+    const before = EXIT_SIGNALS.map((sig) => process.listenerCount(sig));
+
+    const api = createFakeApi();
+    pluginStartServer({ script: 'dist/server/index.js' }).setup(
+      api as RsbuildPluginAPI,
+    );
+
+    // setup() adds exactly one listener per signal.
+    EXIT_SIGNALS.forEach((sig, i) => {
+      expect(process.listenerCount(sig)).toBe(before[i] + 1);
+    });
+
+    onCloseBuildHandler(api)();
+
+    // cleanup() removes them again, so repeated runs don't leak.
+    EXIT_SIGNALS.forEach((sig, i) => {
+      expect(process.listenerCount(sig)).toBe(before[i]);
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Group G2 — restarts are serialized (no concurrent stop/start)
+// ---------------------------------------------------------------------------
+
+describe('restart serialization', () => {
+  it('does not double-fork when a rebuild arrives while stopping', async () => {
+    rs.spyOn(process, 'kill').mockImplementation(() => true);
+    rs.useFakeTimers();
+
+    const api = createFakeApi();
+    pluginStartServer({
+      script: 'dist/server/index.js',
+      restartDebounceMs: 0,
+      killTimeoutMs: 1000,
+    }).setup(api as RsbuildPluginAPI);
+
+    const fire = () =>
+      onAfterBuildHandler(api)({ stats: { hasErrors: () => false } });
+
+    fire(); // fork #1
+    const first = forkResult(0);
+
+    fire(); // restart A: enters stopServer, awaiting #1 exit
+    await rs.advanceTimersByTimeAsync(0);
+
+    fire(); // restart B arrives mid-stop -> must queue behind A
+    await rs.advanceTimersByTimeAsync(0);
+
+    // A is still waiting for #1 to exit; nothing new forked yet.
+    expect(mocks.fork).toHaveBeenCalledTimes(1);
+
+    // #1 exits -> A re-forks (#2). B must NOT also fire here (it would if both
+    // restarts were listening on #1's exit concurrently).
+    first.emit('exit', 0, null);
+    await rs.advanceTimersByTimeAsync(0);
+    expect(mocks.fork).toHaveBeenCalledTimes(2);
+
+    // Only once #2 exits does the queued B restart re-fork (#3).
+    forkResult(1).emit('exit', 0, null);
+    await rs.advanceTimersByTimeAsync(0);
+    expect(mocks.fork).toHaveBeenCalledTimes(3);
   });
 });
 
