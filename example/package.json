@@ -8,10 +8,10 @@
     "build:production": "rsbuild build --env-mode production"
   },
   "devDependencies": {
-    "@hono/node-server": "2.0.5",
+    "@hono/node-server": "2.0.6",
     "@rsbuild/core": "catalog:",
     "@types/node": "catalog:",
-    "hono": "4.12.26",
+    "hono": "4.12.27",
     "rsbuild-plugin-start-server": "workspace:*",
     "typescript": "catalog:"
   }
