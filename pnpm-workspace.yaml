@@ -4,9 +4,9 @@ packages:
 saveExact: true
 
 catalog:
-  '@types/node': 24.13.2
+  '@types/node': 24.13.3
   typescript: 7.0.2
-  '@rsbuild/core': 2.1.5
+  '@rsbuild/core': 2.1.9
 
 minimumReleaseAge: 1440
 
