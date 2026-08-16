@@ -1,6 +1,6 @@
 {
   "name": "rsbuild-plugin-start-server",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Automatically (re)start your server once Rsbuild's build completes.",
   "keywords": [
     "node",
