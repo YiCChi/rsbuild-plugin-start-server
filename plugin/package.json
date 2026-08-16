@@ -49,6 +49,19 @@
     "typescript": "catalog:"
   },
   "peerDependencies": {
-    "@rsbuild/core": ">=1.5.0"
+    "@rsbuild/core": ">=1.5.0",
+    "@rslib/core": ">=0.12.0",
+    "@rstest/core": ">=0.2.2"
+  },
+  "peerDependenciesMeta": {
+    "@rsbuild/core": {
+      "optional": true
+    },
+    "@rslib/core": {
+      "optional": true
+    },
+    "@rstest/core": {
+      "optional": true
+    }
   }
 }

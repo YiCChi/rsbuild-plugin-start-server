@@ -21,7 +21,9 @@ export default defineConfig({
     cleanDistPath: true,
     sourceMap: true,
     target: 'node',
-    minify: true,
+    // Keep the published bundle readable: this is a dev-time build plugin, so
+    // stack traces / debugging matter far more than a few saved kilobytes.
+    minify: false,
   },
   mode: 'production',
 });
