@@ -30,14 +30,22 @@ This plugin automates that loop: after every successful build it (re)launches yo
 ## Installation
 
 ```bash
-pnpm add -D rsbuild-plugin-start-server @rsbuild/core
+pnpm add -D rsbuild-plugin-start-server
 # or
-npm install -D rsbuild-plugin-start-server @rsbuild/core
+npm install -D rsbuild-plugin-start-server
 # or
-yarn add -D rsbuild-plugin-start-server @rsbuild/core
+yarn add -D rsbuild-plugin-start-server
 ```
 
-`@rsbuild/core` (^1.5.0) is a peer dependency and must be installed alongside the plugin.
+The plugin is an Rsbuild plugin, but it only needs _an_ Rsbuild to run — it does not care who owns it. So any one of these satisfies the peer requirement:
+
+| Peer            | Range      | When                                                      |
+| --------------- | ---------- | --------------------------------------------------------- |
+| `@rsbuild/core` | `>=1.5.0`  | You use Rsbuild directly                                  |
+| `@rslib/core`   | `>=0.12.0` | You use [Rslib](https://rslib.rs/) (it bundles Rsbuild)   |
+| `@rstest/core`  | `>=0.2.2`  | You use [Rstest](https://rstest.rs/) (it bundles Rsbuild) |
+
+All three are declared **optional** peers, so installing just the one you already use is enough — no phantom peer warnings, no need to add `@rsbuild/core` on top of Rslib or Rstest.
 
 Requires **Node.js >= 22.22.0** (see `engines` in `package.json`).
 
