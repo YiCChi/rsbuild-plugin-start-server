@@ -24,14 +24,15 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: pnpm/action-setup@v6
-
-      - uses: actions/setup-node@v7
+      - uses: pnpm/setup@v2
         with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'pnpm'
+          runtime: node@${{ matrix.node-version }}
+          cache: true
+          install: false
 
-      - run: pnpm install --frozen-lockfile
+      # `--no-runtime` keeps the matrix's Node from being replaced by the
+      # version `devEngines.runtime` pins for local development.
+      - run: pnpm install --frozen-lockfile --no-runtime
 
       - run: pnpm run typecheck
         working-directory: plugin
