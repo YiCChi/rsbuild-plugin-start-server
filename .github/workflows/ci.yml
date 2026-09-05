@@ -47,3 +47,30 @@ jobs:
 
       - run: pnpm run build
         working-directory: plugin
+
+  # The plugin is built against Rsbuild 2 (via Rslib) but declares
+  # `@rsbuild/core >=1.5.0` as a peer. Pack it and run it inside a real
+  # Rsbuild 1.x consumer so that range stays honest.
+  compat-rsbuild-v1:
+    name: Compat (Rsbuild ${{ matrix.rsbuild-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Minimum declared peer, and the newest 1.x release.
+        rsbuild-version: ['1.5.0', 'latest-v1']
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/setup@v2
+        with:
+          runtime: node@24
+          cache: true
+          install: false
+
+      - run: pnpm install --frozen-lockfile --no-runtime
+
+      - run: pnpm run build
+        working-directory: plugin
+
+      - run: scripts/check-rsbuild-v1-compat.sh ${{ matrix.rsbuild-version }}
