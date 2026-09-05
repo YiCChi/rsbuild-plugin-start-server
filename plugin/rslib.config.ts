@@ -7,11 +7,6 @@ export default defineConfig({
       dts: {
         autoExtension: true,
       },
-      redirect: {
-        dts: {
-          extension: true,
-        },
-      },
     },
   ],
   source: {
