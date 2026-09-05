@@ -43,7 +43,7 @@
   "devDependencies": {
     "@rsbuild/core": "catalog:",
     "@rslib/core": "1.0.0",
-    "@rslint/core": "0.7.3",
+    "@rslint/core": "0.9.1",
     "@rstest/core": "0.11.12",
     "@types/node": "catalog:",
     "typescript": "catalog:"
