@@ -24,7 +24,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: pnpm/setup@v2
+      - uses: pnpm/setup@v3
         with:
           runtime: node@${{ matrix.node-version }}
           cache: true
@@ -62,7 +62,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: pnpm/setup@v2
+      - uses: pnpm/setup@v3
         with:
           runtime: node@24
           cache: true
