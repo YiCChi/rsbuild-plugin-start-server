@@ -42,9 +42,9 @@
   },
   "devDependencies": {
     "@rsbuild/core": "catalog:",
-    "@rslib/core": "1.0.0",
-    "@rslint/core": "0.9.1",
-    "@rstest/core": "0.11.12",
+    "@rslib/core": "1.0.3",
+    "@rslint/core": "0.9.5",
+    "@rstest/core": "0.12.5",
     "@types/node": "catalog:",
     "typescript": "catalog:"
   },
