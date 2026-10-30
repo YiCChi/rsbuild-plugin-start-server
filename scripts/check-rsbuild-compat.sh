@@ -1,16 +1,17 @@
 #!/usr/bin/env bash
-# Smoke-test the packed plugin against an Rsbuild 1.x consumer.
+# Smoke-test the packed plugin against a real Rsbuild consumer.
 #
 # The plugin is built with Rsbuild 2 (via Rslib) but declares
 # `@rsbuild/core >=1.5.0` as a peer. This script packs `plugin/`, installs the
-# tarball into a throwaway project that depends on the requested Rsbuild 1.x
+# tarball into a throwaway project that depends on the requested Rsbuild
 # version, runs `rsbuild build --watch`, and asserts that:
 #   1. the plugin forks the built script (a marker file appears), and
 #   2. SIGINT to Rsbuild cleans the child up (no orphaned process).
 #
-# Usage: scripts/check-rsbuild-v1-compat.sh <rsbuild-version-or-dist-tag>
-#   e.g. scripts/check-rsbuild-v1-compat.sh 1.5.0
-#        scripts/check-rsbuild-v1-compat.sh latest-v1
+# Usage: scripts/check-rsbuild-compat.sh <rsbuild-version-or-dist-tag>
+#   e.g. scripts/check-rsbuild-compat.sh 1.5.0
+#        scripts/check-rsbuild-compat.sh latest-v1
+#        scripts/check-rsbuild-compat.sh latest
 #
 # Expects `pnpm install` to have run and `plugin/dist` to be built.
 set -euo pipefail
@@ -38,7 +39,7 @@ require('node:fs').writeFileSync(
   'package.json',
   JSON.stringify(
     {
-      name: 'rsbuild-v1-compat',
+      name: 'rsbuild-compat',
       private: true,
       type: 'module',
       packageManager,
@@ -81,7 +82,6 @@ pnpm install --silent
 
 INSTALLED="$(node -p 'require("@rsbuild/core/package.json").version')"
 echo "==> installed @rsbuild/core@$INSTALLED"
-[[ "$INSTALLED" == 1.* ]] || { echo "expected an Rsbuild 1.x version, got $INSTALLED"; exit 1; }
 
 echo "==> rsbuild build --watch"
 # Invoke the CLI entry directly rather than through `pnpm exec`: the wrapper
