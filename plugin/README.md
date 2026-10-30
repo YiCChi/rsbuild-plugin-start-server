@@ -1,31 +1,29 @@
 # rsbuild-plugin-start-server
 
-Automatically (re)start a Node.js server whenever an **Rsbuild** build finishes — with manual restart, debouncing, and clean shutdown.
+Start your Node.js server after an **Rsbuild** build, and restart it on every rebuild.
 
 ## Why?
 
-When building a backend (or SSR / API layer) with [Rsbuild](https://rsbuild.dev/), you often need to:
+If you build a backend, an API or an SSR server with [Rsbuild](https://rsbuild.rs/), the dev loop usually looks like this:
 
-1. Run a build (sometimes in watch mode)
-2. Start / restart a Node process pointing at the freshly emitted bundle
-3. Avoid leaving orphan processes around when you stop the dev session
+1. Run `rsbuild build --watch`
+2. Start the emitted bundle with Node, and restart it after each rebuild
+3. Make sure no server process is left behind when you stop
 
-This plugin automates that loop: after every successful build it (re)launches your server script, with debouncing, clean console (optional), source maps, custom env / args, and a quick manual restart command.
+This plugin does steps 2 and 3 inside the Rsbuild process, so you only run one command.
 
 ## Features
 
-- Auto start after the first successful build
-- Auto restart after subsequent successful rebuilds (configurable)
-- Debounce rapid rebuild storms (default 150ms)
-- Manual restart shortcut: type `rs` + Enter in the terminal
-- Waits for the old process to exit before relaunching (no `EADDRINUSE` races), with a `SIGKILL` fallback
-- In-place reload mode via `SIGUSR2` (nodemon-style, no re-fork)
+- Starts the server after the first successful build
+- Restarts it after each successful rebuild (can be turned off)
+- Debounces bursts of rebuilds (150ms by default)
+- Type `rs` + Enter to restart by hand
+- Waits for the old process to exit before starting a new one, so restarts don't hit `EADDRINUSE`; falls back to `SIGKILL` if it hangs
+- Optional in-place reload with `SIGUSR2`, nodemon style, without forking a new process
 - Clears the console between restarts (configurable)
-- Merges custom environment variables
-- Supports custom Node.js exec arguments (e.g. `--inspect`)
-- Optional source maps (`--enable-source-maps`, on by default)
-- Graceful shutdown via Rsbuild's `onExit` / `onCloseBuild` hooks
-- Works with absolute or working-directory-relative script paths
+- Custom environment variables, Node.js flags (e.g. `--inspect`) and script arguments
+- `--enable-source-maps` on by default
+- Stops the server when Rsbuild exits, through Rsbuild's `onCloseBuild` / `onExit` hooks
 
 ## Installation
 
@@ -37,7 +35,7 @@ npm install -D rsbuild-plugin-start-server
 yarn add -D rsbuild-plugin-start-server
 ```
 
-The plugin is an Rsbuild plugin, but it only needs _an_ Rsbuild to run — it does not care who owns it. So any one of these satisfies the peer requirement:
+The plugin needs an Rsbuild to run in, and Rslib and Rstest both ship one. Any of these satisfies the peer requirement:
 
 | Peer            | Range      | When                                                      |
 | --------------- | ---------- | --------------------------------------------------------- |
@@ -45,13 +43,13 @@ The plugin is an Rsbuild plugin, but it only needs _an_ Rsbuild to run — it do
 | `@rslib/core`   | `>=0.12.0` | You use [Rslib](https://rslib.rs/) (it bundles Rsbuild)   |
 | `@rstest/core`  | `>=0.2.2`  | You use [Rstest](https://rstest.rs/) (it bundles Rsbuild) |
 
-All three are declared **optional** peers, so installing just the one you already use is enough — no phantom peer warnings, no need to add `@rsbuild/core` on top of Rslib or Rstest.
+All three are **optional** peers. Install the one you already use; you don't need `@rsbuild/core` on top of Rslib or Rstest, and you won't get missing-peer warnings.
 
-Requires **Node.js >= 22.22.0** (see `engines` in `package.json`).
+Requires **Node.js >= 22.22.0**.
 
 ## Quick Start
 
-Your typical file layout (simplified):
+A typical layout:
 
 ```text
 src/server/index.ts   --> (compiled by Rsbuild) --> dist/server/index.js
@@ -66,33 +64,30 @@ import { pluginStartServer } from 'rsbuild-plugin-start-server';
 export default defineConfig({
   plugins: [
     pluginStartServer({
-      // Relative to the current working directory, OR an absolute path.
-      // In a monorepo sub-package, prefer an absolute path built from
-      // `__dirname` / `import.meta.dirname` so the resolved location does
-      // not depend on where you invoke the CLI from.
+      // Relative to the Rsbuild project root, or an absolute path.
       script: 'dist/server/index.js',
     }),
   ],
 });
 ```
 
-Run Rsbuild in watch mode (the standard back-end dev workflow — Rsbuild's built-in dev server targets front-end HMR and is not used here):
+Run Rsbuild in watch mode. Rsbuild's dev server is built for front-end HMR, so a backend uses `build --watch` instead:
 
 ```bash
 pnpm rsbuild build --watch
 ```
 
-On the first successful build the server starts. On later successful rebuilds it restarts. Type `rs` + Enter at any time for a manual restart.
+The server starts after the first successful build and restarts after each successful rebuild. Type `rs` + Enter to restart it yourself.
 
 ## Manual Restart Shortcut
 
-Inside the same terminal where Rsbuild runs you can type:
+In the terminal where Rsbuild runs, type:
 
 ```text
 rs
 ```
 
-The plugin prints a message and restarts the child process. The restart always honors `restartDebounceMs` (so a flurry of `rs` presses collapses into one restart) and, in the default `SIGTERM` mode, waits for the old process to exit before relaunching. Requires an interactive TTY (it is skipped automatically in CI / piped stdin).
+and press Enter. The restart goes through the same debounce as rebuilds, so pressing `rs` several times in a row restarts once. In the default `SIGTERM` mode it also waits for the old process to exit first. The shortcut needs an interactive TTY and is off in CI or when stdin is piped.
 
 ## API
 
@@ -102,32 +97,30 @@ import type { RsbuildPlugin } from '@rsbuild/core';
 function pluginStartServer(options: PluginStartServerOptions): RsbuildPlugin;
 ```
 
-`RsbuildPlugin` is re-exported from `@rsbuild/core`.
+The package exports `pluginStartServer` and the `PluginStartServerOptions` type.
 
 ### `PluginStartServerOptions`
 
 | Option              | Type                                  | Default         | Description                                                                                                                                                    |
 | ------------------- | ------------------------------------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `script`            | `string`                              | (required)      | Built entry file to execute (relative to the current working directory, or absolute).                                                                          |
-| `nodeArgs`          | `string[]`                            | `[]`            | Extra Node.js exec arguments (e.g. `['--inspect=9229']`).                                                                                                      |
-| `args`              | `string[]`                            | `[]`            | Arguments passed to your application script.                                                                                                                   |
-| `env`               | `Record<string, string \| undefined>` | `{}`            | Extra environment vars merged into `process.env`.                                                                                                              |
-| `clearOnRestart`    | `boolean`                             | `true`          | Clear the console before each restart. Applies to `SIGTERM`/signal restarts only — not to the first start or to `SIGUSR2` reloads.                             |
-| `restartDebounceMs` | `number`                              | `150`           | Debounce interval for back‑to‑back rebuilds (and manual `rs` restarts).                                                                                        |
+| `script`            | `string`                              | (required)      | Built entry file to run. Relative paths resolve against the Rsbuild project root.                                                                              |
+| `nodeArgs`          | `string[]`                            | `[]`            | Extra Node.js flags (e.g. `['--inspect=9229']`).                                                                                                               |
+| `args`              | `string[]`                            | `[]`            | Arguments passed to your script.                                                                                                                               |
+| `env`               | `Record<string, string \| undefined>` | `{}`            | Environment variables merged into `process.env`.                                                                                                               |
+| `clearOnRestart`    | `boolean`                             | `true`          | Clear the console before each restart. Only applies to kill-and-restart; not to the first start or to `SIGUSR2` reloads.                                       |
+| `restartDebounceMs` | `number`                              | `150`           | Debounce window for back-to-back rebuilds and `rs` restarts.                                                                                                   |
 | `autoRestart`       | `boolean`                             | `true`          | Restart on each successful rebuild. If `false`, rebuilds are ignored while the process is alive; a crashed process is relaunched on the next successful build. |
-| `signal`            | `NodeJS.Signals \| boolean`           | `false`         | How to stop the child. `false` = `SIGTERM` (kill + re-fork); `true` = `SIGUSR2` (in-place reload, no re-fork); or a signal string.                             |
-| `killTimeoutMs`     | `number`                              | `1500`          | Grace period before force-killing (`SIGKILL`) the child after the kill signal. Ignored in reload mode.                                                         |
-| `cwd`               | `string`                              | `process.cwd()` | Working directory for the child process.                                                                                                                       |
-| `enableSourceMaps`  | `boolean`                             | `true`          | Adds `--enable-source-maps` to `execArgv` for better stack traces.                                                                                             |
-| `manualRestart`     | `boolean`                             | `true`          | Enable the `rs` + Enter manual restart shortcut on stdin.                                                                                                      |
+| `signal`            | `NodeJS.Signals \| boolean`           | `false`         | How to stop the child. `false` = `SIGTERM` (kill and fork again); `true` = `SIGUSR2` (reload in place, no fork); or any signal name.                           |
+| `killTimeoutMs`     | `number`                              | `1500`          | How long to wait after the kill signal before sending `SIGKILL`. Ignored in reload mode.                                                                       |
+| `cwd`               | `string`                              | `process.cwd()` | Working directory of the child process.                                                                                                                        |
+| `enableSourceMaps`  | `boolean`                             | `true`          | Add `--enable-source-maps` so stack traces point at your source.                                                                                               |
+| `manualRestart`     | `boolean`                             | `true`          | Enable the `rs` + Enter shortcut.                                                                                                                              |
 
 ### Signals
 
-- **`signal: false` (default)** — the plugin sends `SIGTERM`, waits for the child to actually exit (then force-kills with `SIGKILL` after `killTimeoutMs`), and forks a fresh process. Use this when your server binds ports/files that must be released before restart. Each successful rebuild repeats this whole cycle.
-- **`signal: true`** — the plugin sends `SIGUSR2` and **does not re-fork**. Your script is expected to install a `SIGUSR2` handler and reload itself in place (nodemon-style). Each successful rebuild re-sends `SIGUSR2`; the process stays alive across rebuilds. Useful for zero-downtime reloads where you don't want the process to restart.
-- **`signal: '<sig>'`** — sends that signal and re-forks (same as `false`, just with a different signal).
-
-In kill + re-fork modes, the plugin awaits the old process's exit before relaunching, so you won't see `EADDRINUSE`-style races on restart.
+- **`signal: false` (default)**: the plugin sends `SIGTERM`, waits for the child to exit (sending `SIGKILL` after `killTimeoutMs` if it doesn't), then forks a new process. Use this when the server holds ports or files that must be released before it starts again.
+- **`signal: true`**: the plugin sends `SIGUSR2` and **does not fork a new process**. Your script has to handle `SIGUSR2` and reload itself, as with nodemon. The process stays alive across rebuilds.
+- **`signal: '<sig>'`**: sends that signal, then forks a new process, same as `false` with a different signal.
 
 ## Examples
 
@@ -137,7 +130,7 @@ In kill + re-fork modes, the plugin awaits the old process's exit before relaunc
 pluginStartServer({ script: 'dist/server/index.js' });
 ```
 
-### 2. With inspect & custom args
+### 2. Debugger and script arguments
 
 ```ts
 pluginStartServer({
@@ -147,7 +140,7 @@ pluginStartServer({
 });
 ```
 
-### 3. Custom environment & no console clear
+### 3. Custom environment, keep console output
 
 ```ts
 pluginStartServer({
@@ -157,7 +150,7 @@ pluginStartServer({
 });
 ```
 
-### 4. Manual restart only (disable auto)
+### 4. Restart by hand only
 
 ```ts
 pluginStartServer({
@@ -172,19 +165,19 @@ pluginStartServer({
 import { join } from 'node:path';
 
 pluginStartServer({
-  script: join(process.cwd(), 'dist/server/index.js'),
+  script: join(import.meta.dirname, 'dist/server/index.js'),
 });
 ```
 
-### 6. In-place reload via `SIGUSR2`
+### 6. Reload in place with `SIGUSR2`
 
-With `signal: true`, the plugin sends `SIGUSR2` instead of restarting the process. Your server must handle the signal and refresh itself:
+With `signal: true` the plugin sends `SIGUSR2` instead of restarting the process. Your server handles the signal and refreshes itself:
 
 ```ts
 // rsbuild.config.ts
 pluginStartServer({
   script: 'dist/server/index.js',
-  signal: true, // SIGUSR2 in-place reload
+  signal: true,
 });
 ```
 
@@ -193,56 +186,58 @@ pluginStartServer({
 let server = startApp();
 
 process.on('SIGUSR2', () => {
-  // Tear down current connections / close ports, then re-initialize.
+  // Close the current server, then start it again.
   server.close(() => {
     server = startApp();
-    process.emit('SIGUSR2'); // some frameworks expect the signal to keep propagating
   });
 });
 ```
 
-Use this when you want zero-downtime reloads and your app can hot-swap its handlers. If in doubt, leave `signal: false`.
+Only use this if your app can swap its handlers in place. Otherwise keep `signal: false`.
 
 ## Tips
 
-- Ensure your build actually outputs the script before the first restart attempt. If you use incremental / partial builds, point `script` at the final emitted file.
-- If you see stale processes after killing the terminal, verify your shell forwards signals properly. The plugin also uses Rsbuild's `onExit` / `onCloseBuild` / `onCloseDevServer` hooks and a `SIGKILL` fallback to clean up children.
-- To see plugin diagnostics, raise Rsbuild's log level (e.g. `RSBUILD_LOG_LEVEL=verbose`); the plugin logs through `api.logger`.
+- `script` must point at the file Rsbuild emits. With partial or multi-entry builds, point it at the final server entry.
+- If server processes survive after you close the terminal, check that your shell forwards signals. The plugin stops the child from Rsbuild's `onCloseBuild` / `onExit` hooks and falls back to `SIGKILL`.
+- The plugin logs through Rsbuild's logger, so `--log-level` (or `logLevel` in the config) also controls its messages.
 
 ## Limitations
 
-- Not intended for production process management. Use a mature supervisor (pm2, systemd, containers, etc.) in production.
-- Assumes a single server process; does not manage clusters.
+- This is a dev tool. In production, use a process manager such as pm2, systemd or a container runtime.
+- It runs a single server process and does not manage clusters.
 
 ## Troubleshooting
 
 | Symptom                            | Possible Cause                   | Fix                                                                                      |
 | ---------------------------------- | -------------------------------- | ---------------------------------------------------------------------------------------- |
 | Child never starts                 | Wrong `script` path              | Check the emitted file path in `dist`.                                                   |
-| `EADDRINUSE` / port in use         | Old process did not exit in time | Increase `killTimeoutMs`, or make sure your app closes the port on `SIGTERM`.            |
-| Rapid multiple restarts            | Very fast rebuilds               | Increase `restartDebounceMs`.                                                            |
-| No manual restart on `rs`          | Terminal not forwarding stdin    | Run in an interactive TTY; the shortcut is auto-disabled in CI / piped stdin.            |
-| `signal: true` has no effect       | App ignores `SIGUSR2`            | Install a `SIGUSR2` handler in your server (see Example 6).                              |
+| `EADDRINUSE` / port in use         | Old process did not exit in time | Increase `killTimeoutMs`, or close the port in your app's `SIGTERM` handler.             |
+| Several restarts in a row          | Very fast rebuilds               | Increase `restartDebounceMs`.                                                            |
+| `rs` does nothing                  | stdin is not a TTY               | Run in an interactive terminal; the shortcut is off in CI and with piped stdin.          |
+| `signal: true` has no effect       | App ignores `SIGUSR2`            | Add a `SIGUSR2` handler to your server (see Example 6).                                  |
 | `autoRestart: false` won't restart | Process still alive              | With auto-restart off, rebuilds are ignored while the process runs; use `rs` to restart. |
-| No source map traces               | Node version / maps disabled     | Ensure Node >= 22.22 and `enableSourceMaps: true`.                                       |
+| No source-mapped stack traces      | Old Node or maps disabled        | Use Node >= 22.22 and keep `enableSourceMaps: true`.                                     |
 
 ## Contributing
 
-PRs and issues welcome. Please keep changes small and focused. Before submitting:
+Issues and PRs are welcome. Keep changes small and focused. Before you open a PR, run these in `plugin/`:
 
-1. Run build: `pnpm build`
-2. Ensure TypeScript passes
-3. Describe behavior changes in the PR
+```bash
+pnpm run typecheck
+pnpm run lint
+pnpm run test
+pnpm run build
+```
+
+and describe any behavior change in the PR.
 
 ## License
 
-MIT © YiCChi (2025–present)
+MIT © YiCChi (2025-present)
 
 ## Acknowledgements
 
-This plugin was inspired by and borrows some implementation ideas from:
+Inspired by, and borrowing ideas from:
 
 - [start-server-webpack-plugin](https://github.com/ericclemmons/start-server-webpack-plugin)
 - [run-script-webpack-plugin](https://github.com/atassis/run-script-webpack-plugin)
-
-Thanks to the authors & contributors of those projects for their prior art in simplifying server (re)start workflows during development.
