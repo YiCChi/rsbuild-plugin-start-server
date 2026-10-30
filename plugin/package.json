@@ -31,9 +31,6 @@
     "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
-  "engines": {
-    "node": ">=22.22.0"
-  },
   "scripts": {
     "dev": "rslib build --watch",
     "build": "rslib build",
@@ -66,5 +63,8 @@
     "@rstest/core": {
       "optional": true
     }
+  },
+  "engines": {
+    "node": ">=22.22.0"
   }
 }
