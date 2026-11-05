@@ -11,7 +11,7 @@
     "@hono/node-server": "2.1.5",
     "@rsbuild/core": "catalog:",
     "@types/node": "catalog:",
-    "hono": "4.13.14",
+    "hono": "4.13.16",
     "rsbuild-plugin-start-server": "workspace:*",
     "typescript": "catalog:"
   }
