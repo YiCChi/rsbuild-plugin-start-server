@@ -6,7 +6,7 @@ saveExact: true
 catalog:
   '@types/node': 26.6.6
   typescript: 7.0.2
-  '@rsbuild/core': 2.3.1
+  '@rsbuild/core': 2.3.3
 
 minimumReleaseAge: 1440
 
