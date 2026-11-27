@@ -1,5 +1,9 @@
 # rsbuild-plugin-start-server
 
+[![npm version](https://img.shields.io/npm/v/rsbuild-plugin-start-server)](https://www.npmjs.com/package/rsbuild-plugin-start-server)
+[![npm downloads](https://img.shields.io/npm/dm/rsbuild-plugin-start-server)](https://www.npmjs.com/package/rsbuild-plugin-start-server)
+[![license](https://img.shields.io/npm/l/rsbuild-plugin-start-server)](https://github.com/YiCChi/rsbuild-plugin-start-server/blob/main/LICENSE)
+
 Start your Node.js server after an **Rsbuild** build, and restart it on every rebuild.
 
 ## Why?
